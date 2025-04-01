@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import re
 from datetime import datetime
+import urllib.parse
 
 # Caricamento del file Excel con caching
 @st.cache_data
@@ -37,7 +38,7 @@ def genera_preventivo_da_dettato(testo: str, df: pd.DataFrame) -> str:
     intestazione += f"<p>Preventivo - data di generazione: {data_oggi}</p>"
 
     contenuto = f"1) Preventivo: € {round(totale, 2)}<br>2) Dettaglio:<br>{dettaglio}"
-    blocco = f"<div id='blocco_preventivo'>{intestazione}<br>{contenuto}</div>"
+    blocco = f"{intestazione}<br>{contenuto}"
     return blocco
 
 # Layout Streamlit
@@ -54,24 +55,21 @@ input_codici = st.text_input("Scrivi qui i codici regionali:")
 # Bottone di elaborazione
 if st.button("Genera Preventivo") or input_codici:
     try:
-        risultato = genera_preventivo_da_dettato(input_codici, carica_tariffario())
-        st.markdown(risultato, unsafe_allow_html=True)
+        risultato_html = genera_preventivo_da_dettato(input_codici, carica_tariffario())
+        st.markdown(risultato_html, unsafe_allow_html=True)
 
-        # Aggiunge il pulsante che apre il preventivo in una nuova finestra
-        st.markdown("""
+        # Codifica contenuto preventivo nell'URL per nuova finestra
+        contenuto_encoded = urllib.parse.quote(risultato_html)
+        html_link = f"""
         <br>
-        <button onclick="apriFinestraPreventivo()">Stampa preventivo</button>
-        <script>
-        function apriFinestraPreventivo() {
-            var contenuto = document.getElementById('blocco_preventivo').innerHTML;
-            var nuovaFinestra = window.open('', '', 'width=800,height=600');
-            nuovaFinestra.document.write('<html><head><title>Preventivo</title></head><body>');
-            nuovaFinestra.document.write(contenuto);
-            nuovaFinestra.document.write('</body></html>');
-            nuovaFinestra.document.close();
-        }
-        </script>
-        """, unsafe_allow_html=True)
+        <a href="javascript:void(0);" onclick="
+            var w = window.open('', '', 'width=800,height=600');
+            w.document.write(decodeURIComponent('{contenuto_encoded}'));
+            w.document.title = 'Preventivo';
+            w.document.close();
+        ">📄 Apri in finestra per stampa</a>
+        """
+        st.markdown(html_link, unsafe_allow_html=True)
 
     except Exception as e:
         st.error(f"Errore durante la generazione del preventivo: {e}")
