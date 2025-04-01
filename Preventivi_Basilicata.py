@@ -57,19 +57,18 @@ if st.button("Genera Preventivo") or input_codici:
         risultato = genera_preventivo_da_dettato(input_codici, carica_tariffario())
         st.markdown(risultato, unsafe_allow_html=True)
 
-        # Aggiunge il pulsante di stampa via JavaScript
+        # Aggiunge il pulsante che apre il preventivo in una nuova finestra
         st.markdown("""
         <br>
-        <button onclick="stampaPreventivo()">Stampa preventivo</button>
+        <button onclick="apriFinestraPreventivo()">Stampa preventivo</button>
         <script>
-        function stampaPreventivo() {
+        function apriFinestraPreventivo() {
             var contenuto = document.getElementById('blocco_preventivo').innerHTML;
-            var finestra = window.open('', '', 'height=600,width=800');
-            finestra.document.write('<html><head><title>Stampa Preventivo</title></head><body>');
-            finestra.document.write(contenuto);
-            finestra.document.write('</body></html>');
-            finestra.document.close();
-            finestra.print();
+            var nuovaFinestra = window.open('', '', 'width=800,height=600');
+            nuovaFinestra.document.write('<html><head><title>Preventivo</title></head><body>');
+            nuovaFinestra.document.write(contenuto);
+            nuovaFinestra.document.write('</body></html>');
+            nuovaFinestra.document.close();
         }
         </script>
         """, unsafe_allow_html=True)
