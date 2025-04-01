@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import re
+from datetime import datetime
 
 # Caricamento del file Excel con caching
 @st.cache_data
@@ -21,9 +22,23 @@ def genera_preventivo_da_dettato(testo: str, df: pd.DataFrame) -> str:
         f"- {row['Descrizione'].capitalize()} € {row['Tariffa-Basilicata']}"
         for _, row in df_codici.iterrows()
     ]
-    dettaglio = "\n".join(righe_dettaglio)
 
-    return f"1) Preventivo: € {round(totale, 2)}\n2) Dettaglio:\n{dettaglio}"
+    # Identifica i codici non trovati
+    codici_trovati = df_codici["Regionale-Basilicata"].astype(str).tolist()
+    codici_non_trovati = [c for c in codici if c not in codici_trovati]
+    if codici_non_trovati:
+        for c in codici_non_trovati:
+            righe_dettaglio.append(f"<span style='color:red'>- codice non trovato: {c}</span>")
+
+    dettaglio = "<br>".join(righe_dettaglio)
+
+    data_oggi = datetime.today().strftime('%d/%m/%Y')
+    intestazione = f"<h4>Laboratorio di analisi cliniche MONTEMURRO - Matera</h4>"
+    intestazione += f"<p>Preventivo - data di generazione: {data_oggi}</p>"
+
+    contenuto = f"1) Preventivo: € {round(totale, 2)}<br>2) Dettaglio:<br>{dettaglio}"
+    blocco = f"<div id='blocco_preventivo'>{intestazione}<br>{contenuto}</div>"
+    return blocco
 
 # Layout Streamlit
 st.set_page_config(page_title="Preventivo Sanitario Basilicata", layout="centered")
@@ -40,7 +55,25 @@ input_codici = st.text_input("Scrivi qui i codici regionali:")
 if st.button("Genera Preventivo") or input_codici:
     try:
         risultato = genera_preventivo_da_dettato(input_codici, carica_tariffario())
-        st.text_area("Risultato del Preventivo:", risultato, height=200)
+        st.markdown(risultato, unsafe_allow_html=True)
+
+        # Aggiunge il pulsante di stampa via JavaScript
+        st.markdown("""
+        <br>
+        <button onclick="stampaPreventivo()">Stampa preventivo</button>
+        <script>
+        function stampaPreventivo() {
+            var contenuto = document.getElementById('blocco_preventivo').innerHTML;
+            var finestra = window.open('', '', 'height=600,width=800');
+            finestra.document.write('<html><head><title>Stampa Preventivo</title></head><body>');
+            finestra.document.write(contenuto);
+            finestra.document.write('</body></html>');
+            finestra.document.close();
+            finestra.print();
+        }
+        </script>
+        """, unsafe_allow_html=True)
+
     except Exception as e:
         st.error(f"Errore durante la generazione del preventivo: {e}")
 
