@@ -58,15 +58,17 @@ if st.button("Genera Preventivo") or input_codici:
         risultato_html = genera_preventivo_da_dettato(input_codici, carica_tariffario())
         st.markdown(risultato_html, unsafe_allow_html=True)
 
-        # Codifica contenuto preventivo nell'URL per nuova finestra
+        # Codifica sicura del contenuto HTML
         contenuto_encoded = urllib.parse.quote(risultato_html)
         html_link = f"""
         <br>
-        <a href="javascript:void(0);" onclick="
+        <a href="#" onclick="
             var w = window.open('', '', 'width=800,height=600');
+            w.document.write('<!DOCTYPE html><html><head><title>Preventivo</title></head><body>');
             w.document.write(decodeURIComponent('{contenuto_encoded}'));
-            w.document.title = 'Preventivo';
+            w.document.write('</body></html>');
             w.document.close();
+            w.focus();
         ">📄 Apri in finestra per stampa</a>
         """
         st.markdown(html_link, unsafe_allow_html=True)
