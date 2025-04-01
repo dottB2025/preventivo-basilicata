@@ -33,29 +33,41 @@ st.markdown("Inserisci o detta i codici regionali separati da virgola.\n"
             "Puoi usare anche punti o spazi tra i numeri.\n" 
             "Esempio: 3.0.0.12.31, 3.0.0.13.82")
 
-# Area per testo e riconoscimento vocale
+# Area vocale (HTML+JS personalizzato)
 st.markdown("""
 <script>
-function startRecognition() {
-  const recognition = new webkitSpeechRecognition();
-  recognition.lang = 'it-IT';
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-  recognition.onresult = function(event) {
-    const result = event.results[0][0].transcript;
-    document.getElementById('speech_input').value = result;
-    const inputEvent = new Event('input', { bubbles: true });
-    document.getElementById('speech_input').dispatchEvent(inputEvent);
-  };
-  recognition.start();
+let recognition;
+function startDictation() {
+  if (!('webkitSpeechRecognition' in window)) {
+    alert("Il tuo browser non supporta la dettatura vocale.");
+  } else {
+    recognition = new webkitSpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "it-IT";
+    recognition.start();
+
+    recognition.onresult = function(e) {
+      document.getElementById('voice_output').value = e.results[0][0].transcript;
+      recognition.stop();
+    };
+
+    recognition.onerror = function(e) {
+      recognition.stop();
+    }
+  }
 }
 </script>
-<button onclick="startRecognition()">🎙️ Dettatura vocale</button>
-<input id="speech_input" style="width:100%; padding:10px; margin-top:10px" />
+<button onclick="startDictation()">🎙️ Detta ora</button>
+<br><br>
+<textarea id="voice_output" rows="2" style="width: 100%;"></textarea>
+<form action="" method="get">
+  <input type="submit" value="Usa questo testo" />
+</form>
 """, unsafe_allow_html=True)
 
-# Input testo collegato al campo JavaScript
-input_codici = st.text_input("Scrivi o detta qui i codici regionali:", key="speech_input")
+# Input manuale in Streamlit
+input_codici = st.text_input("Oppure scrivi qui i codici regionali:")
 
 # Bottone di elaborazione
 if st.button("Genera Preventivo") or input_codici:
