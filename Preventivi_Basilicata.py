@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import re
 from datetime import datetime
+from fpdf import FPDF
 import base64
 
 # Caricamento del file Excel con caching
@@ -24,22 +25,31 @@ def genera_preventivo_da_dettato(testo: str, df: pd.DataFrame) -> str:
         for _, row in df_codici.iterrows()
     ]
 
-    # Identifica i codici non trovati
     codici_trovati = df_codici["Regionale-Basilicata"].astype(str).tolist()
     codici_non_trovati = [c for c in codici if c not in codici_trovati]
     if codici_non_trovati:
         for c in codici_non_trovati:
-            righe_dettaglio.append(f"<span style='color:red'>- codice non trovato: {c}</span>")
+            righe_dettaglio.append(f"- codice non trovato: {c}")
 
-    dettaglio = "<br>".join(righe_dettaglio)
+    dettaglio = "\n".join(righe_dettaglio)
 
     data_oggi = datetime.today().strftime('%d/%m/%Y')
-    intestazione = f"<h4>Laboratorio di analisi cliniche MONTEMURRO - Matera</h4>"
-    intestazione += f"<p>Preventivo - data di generazione: {data_oggi}</p>"
+    intestazione = "Laboratorio di analisi cliniche MONTEMURRO - Matera"
+    intestazione += f"\nPreventivo - data di generazione: {data_oggi}"
 
-    contenuto = f"1) Preventivo: € {round(totale, 2)}<br>2) Dettaglio:<br>{dettaglio}"
-    blocco = f"{intestazione}<br>{contenuto}"
-    return blocco
+    contenuto = f"{intestazione}\n\n1) Preventivo: € {round(totale, 2)}\n2) Dettaglio:\n{dettaglio}"
+    return contenuto
+
+# Funzione per creare PDF
+
+def crea_pdf(contenuto: str) -> bytes:
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font("Arial", size=12)
+    for linea in contenuto.split("\n"):
+        pdf.multi_cell(0, 10, linea)
+    return pdf.output(dest='S').encode('latin1')
 
 # Layout Streamlit
 st.set_page_config(page_title="Preventivo Sanitario Basilicata", layout="centered")
@@ -55,21 +65,24 @@ input_codici = st.text_input("Scrivi qui i codici regionali:")
 # Bottone di elaborazione
 if st.button("Genera Preventivo") or input_codici:
     try:
-        risultato_html = genera_preventivo_da_dettato(input_codici, carica_tariffario())
-        st.markdown(risultato_html, unsafe_allow_html=True)
+        risultato_testo = genera_preventivo_da_dettato(input_codici, carica_tariffario())
+        st.text_area("Risultato del Preventivo:", risultato_testo, height=300)
 
-        # Codifica base64 dell'intera pagina HTML per apertura in nuova finestra
-        html_page = f"""
-        <!DOCTYPE html>
-        <html>
-        <head><title>Preventivo</title></head>
-        <body>{risultato_html}</body>
-        </html>
-        """
-        b64_html = base64.b64encode(html_page.encode()).decode()
-        data_url = f"data:text/html;base64,{b64_html}"
+        st.markdown("""
+        <button onclick="navigator.clipboard.writeText(document.getElementById('preventivo_testo').innerText)">
+            📋 Copia preventivo negli appunti
+        </button>
+        <script>
+        const area = document.querySelector('textarea');
+        area.id = 'preventivo_testo';
+        </script>
+        """, unsafe_allow_html=True)
 
-        st.markdown(f"<a href='{data_url}' target='_blank'>📄 Apri in finestra per stampa</a>", unsafe_allow_html=True)
+        # Genera PDF e link per download
+        pdf_bytes = crea_pdf(risultato_testo)
+        b64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
+        href = f'<a href="data:application/pdf;base64,{b64_pdf}" download="preventivo.pdf">⬇️ Esporta come PDF</a>'
+        st.markdown(href, unsafe_allow_html=True)
 
     except Exception as e:
         st.error(f"Errore durante la generazione del preventivo: {e}")
