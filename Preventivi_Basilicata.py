@@ -41,18 +41,17 @@ def genera_preventivo_da_dettato(testo: str, df: pd.DataFrame) -> str:
     contenuto = f"{intestazione}\n\n1) Preventivo: € {round(totale, 2)}\n2) Dettaglio:\n{dettaglio}"
     return contenuto
 
-# Classe PDF con font personalizzato
+# Classe PDF senza header personalizzato
 class PDF(FPDF):
-    def header(self):
-        self.set_font("DejaVu", size=12)
+    pass
 
-# Funzione per creare PDF
+# Funzione per creare PDF con font unicode
 
 def crea_pdf_unicode(contenuto: str) -> bytes:
     pdf = PDF()
     font_path = carica_font()
-    pdf.add_page()
     pdf.add_font("DejaVu", "", font_path, uni=True)
+    pdf.add_page()
     pdf.set_font("DejaVu", size=12)
     pdf.set_auto_page_break(auto=True, margin=15)
     for linea in contenuto.split("\n"):
