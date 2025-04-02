@@ -18,9 +18,13 @@ def carica_tariffario(percorso="TariffarioRegioneBasilicata.xlsx"):
 def genera_preventivo_da_dettato(testo: str, df: pd.DataFrame) -> str:
     testo = testo.upper().replace("PAI", "")
     testo = testo.replace(".", "").replace(" ", "")
-    codici = re.findall(r"\b\d{5,7}\b", testo)
+    testo = testo.replace("-", ",")  # Consente separazione anche con trattino
+    codici_input = re.split(r"[,]+", testo)
 
-    df_codici = df[df["Regionale-Basilicata"].astype(str).isin(codici)]
+    codici_validi = [c for c in codici_input if len(c) == 7 and c.isdigit()]
+    codici_non_validi = [c for c in codici_input if len(c) != 7 or not c.isdigit()]
+
+    df_codici = df[df["Regionale-Basilicata"].astype(str).isin(codici_validi)]
     totale = df_codici["Tariffa-Basilicata"].sum()
 
     righe_dettaglio = [
@@ -29,9 +33,10 @@ def genera_preventivo_da_dettato(testo: str, df: pd.DataFrame) -> str:
     ]
 
     codici_trovati = df_codici["Regionale-Basilicata"].astype(str).tolist()
-    codici_non_trovati = [c for c in codici if c not in codici_trovati]
-    if codici_non_trovati:
-        for c in codici_non_trovati:
+    codici_non_trovati = [c for c in codici_validi if c not in codici_trovati]
+    codici_errati = codici_non_trovati + codici_non_validi
+    if codici_errati:
+        for c in codici_errati:
             righe_dettaglio.append(f"- codice non trovato: {c}")
 
     dettaglio = "\n".join(righe_dettaglio)
@@ -93,9 +98,9 @@ def crea_pdf_unicode(contenuto: str) -> bytes:
 st.set_page_config(page_title="Preventivo Sanitario Basilicata", layout="centered")
 st.title("Preventivo Sanitario - Basilicata")
 
-st.markdown("Inserisci i codici regionali separati da virgola.\n" 
-            "Puoi usare anche punti o spazi tra i numeri.\n" 
-            "Esempio: 3.0.0.12.31, 3.0.0.13.82")
+st.markdown("Inserisci i codici regionali separati da virgola, trattino o spazio.\n" 
+            "Puoi usare anche punti tra i numeri.\n" 
+            "Esempio: 3.0.0.12.31, 3.0.0.13.82 - 3001245")
 
 # Input manuale
 input_codici = st.text_input("Scrivi qui i codici regionali:")
