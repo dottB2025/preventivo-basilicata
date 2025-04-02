@@ -91,7 +91,7 @@ def crea_pdf_unicode(contenuto: str) -> bytes:
             else:
                 pdf.multi_cell(0, 8, linea)
 
-    return bytes(pdf.output(dest='S'))
+    return pdf.output(dest='S').encode('latin1')
 
 # Layout Streamlit
 st.set_page_config(page_title="Preventivo Sanitario Basilicata", layout="centered")
