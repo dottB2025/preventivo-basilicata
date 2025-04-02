@@ -46,14 +46,8 @@ class PDF(FPDF):
     def header(self):
         self.set_font("DejaVu", size=12)
 
-@st.cache_resource
 def carica_font():
-    import urllib.request
-    font_path = "DejaVuSans.ttf"
-    if not os.path.exists(font_path):
-        url = "https://github.com/dejavu-fonts/dejavu-fonts/raw/version_2_37/ttf/DejaVuSans.ttf"
-        urllib.request.urlretrieve(url, font_path)
-    return font_path
+    return "DejaVuSans.ttf"
 
 def crea_pdf_unicode(contenuto: str) -> bytes:
     pdf = PDF()
