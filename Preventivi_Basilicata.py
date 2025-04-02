@@ -51,11 +51,18 @@ def crea_pdf_unicode(contenuto: str) -> bytes:
     pdf = PDF()
     font_path = carica_font()
     pdf.add_font("DejaVu", "", font_path, uni=True)
+    pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     pdf.set_font("DejaVu", size=12)
-    pdf.set_auto_page_break(auto=True, margin=15)
+
+    larghezza_pagina = pdf.w - 2 * pdf.l_margin
+
     for linea in contenuto.split("\n"):
-        pdf.multi_cell(0, 10, linea)
+        if linea.strip() == "":
+            pdf.ln(5)
+        else:
+            pdf.multi_cell(larghezza_pagina, 10, linea)
+
     return pdf.output(dest='S').encode("latin1")
 
 # Layout Streamlit
