@@ -4,6 +4,7 @@ import re
 from datetime import datetime
 from fpdf import FPDF
 import base64
+import os
 
 # Caricamento del file Excel con caching
 @st.cache_data
@@ -40,16 +41,30 @@ def genera_preventivo_da_dettato(testo: str, df: pd.DataFrame) -> str:
     contenuto = f"{intestazione}\n\n1) Preventivo: € {round(totale, 2)}\n2) Dettaglio:\n{dettaglio}"
     return contenuto
 
-# Funzione per creare PDF
+# Funzione per creare PDF con fpdf2 e font Unicode
+class PDF(FPDF):
+    def header(self):
+        self.set_font("DejaVu", size=12)
 
-def crea_pdf(contenuto: str) -> bytes:
-    pdf = FPDF()
+@st.cache_resource
+def carica_font():
+    import urllib.request
+    font_path = "DejaVuSans.ttf"
+    if not os.path.exists(font_path):
+        url = "https://github.com/dejavu-fonts/dejavu-fonts/raw/version_2_37/ttf/DejaVuSans.ttf"
+        urllib.request.urlretrieve(url, font_path)
+    return font_path
+
+def crea_pdf_unicode(contenuto: str) -> bytes:
+    pdf = PDF()
+    font_path = carica_font()
     pdf.add_page()
+    pdf.add_font("DejaVu", "", font_path, uni=True)
+    pdf.set_font("DejaVu", size=12)
     pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.set_font("Arial", size=12)
     for linea in contenuto.split("\n"):
         pdf.multi_cell(0, 10, linea)
-    return pdf.output(dest='S').encode('latin1')
+    return pdf.output(dest='S').encode("latin1")
 
 # Layout Streamlit
 st.set_page_config(page_title="Preventivo Sanitario Basilicata", layout="centered")
@@ -66,20 +81,18 @@ input_codici = st.text_input("Scrivi qui i codici regionali:")
 if st.button("Genera Preventivo") or input_codici:
     try:
         risultato_testo = genera_preventivo_da_dettato(input_codici, carica_tariffario())
-        st.text_area("Risultato del Preventivo:", risultato_testo, height=300)
+        st.text_area("Risultato del Preventivo:", risultato_testo, height=300, key="output_area")
 
-        st.markdown("""
-        <button onclick="navigator.clipboard.writeText(document.getElementById('preventivo_testo').innerText)">
-            📋 Copia preventivo negli appunti
-        </button>
-        <script>
-        const area = document.querySelector('textarea');
-        area.id = 'preventivo_testo';
-        </script>
-        """, unsafe_allow_html=True)
+        # Pulsante di copia (versione migliorata con Streamlit native)
+        st.download_button(
+            label="📋 Copia preventivo (testo)",
+            data=risultato_testo,
+            file_name="preventivo.txt",
+            mime="text/plain"
+        )
 
         # Genera PDF e link per download
-        pdf_bytes = crea_pdf(risultato_testo)
+        pdf_bytes = crea_pdf_unicode(risultato_testo)
         b64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
         href = f'<a href="data:application/pdf;base64,{b64_pdf}" download="preventivo.pdf">⬇️ Esporta come PDF</a>'
         st.markdown(href, unsafe_allow_html=True)
