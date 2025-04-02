@@ -17,7 +17,6 @@ def carica_tariffario(percorso="TariffarioRegioneBasilicata.xlsx"):
 # Funzione per generare il preventivo
 def genera_preventivo_da_dettato(testo: str, df: pd.DataFrame) -> str:
     testo = testo.upper().replace("PAI", "")
-    testo = testo.replace(".", "").replace(" ", "")
     testo = testo.replace("-", ",")  # Consente separazione anche con trattino
     codici_input = re.split(r"[,]+", testo)
 
@@ -98,9 +97,8 @@ def crea_pdf_unicode(contenuto: str) -> bytes:
 st.set_page_config(page_title="Preventivo Sanitario Basilicata", layout="centered")
 st.title("Preventivo Sanitario - Basilicata")
 
-st.markdown("Inserisci i codici regionali separati da virgola, trattino o spazio.\n" 
-            "Puoi usare anche punti tra i numeri.\n" 
-            "Esempio: 3.0.0.12.31, 3.0.0.13.82 - 3001245")
+st.markdown("Inserisci i codici regionali separati da virgola o trattino.\n" 
+            "Esempio: 3001231,3001404 - 3001055")
 
 # Input manuale
 input_codici = st.text_input("Scrivi qui i codici regionali:")
