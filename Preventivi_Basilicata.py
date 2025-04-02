@@ -54,7 +54,6 @@ def crea_pdf_unicode(contenuto: str) -> bytes:
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     pdf.set_font("DejaVu", size=12)
-
     larghezza_pagina = pdf.w - 2 * pdf.l_margin
 
     for linea in contenuto.split("\n"):
@@ -63,7 +62,7 @@ def crea_pdf_unicode(contenuto: str) -> bytes:
         else:
             pdf.multi_cell(larghezza_pagina, 10, linea)
 
-    return pdf.output(dest='S').encode("latin1")
+    return bytes(pdf.output(dest='S'))
 
 # Layout Streamlit
 st.set_page_config(page_title="Preventivo Sanitario Basilicata", layout="centered")
