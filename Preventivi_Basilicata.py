@@ -41,11 +41,15 @@ def genera_preventivo_da_dettato(testo: str, df: pd.DataFrame) -> str:
     contenuto = f"{intestazione}\n\n1) Preventivo: € {round(totale, 2)}\n2) Dettaglio:\n{dettaglio}"
     return contenuto
 
-# Classe PDF senza header personalizzato
+# Classe PDF migliorata
 class PDF(FPDF):
-    pass
+    def header(self):
+        self.set_font("DejaVu", size=14)
+        self.set_text_color(0)
+        self.cell(0, 10, "Laboratorio di analisi cliniche MONTEMURRO - Matera", ln=True, align="C")
+        self.ln(5)
 
-# Funzione per creare PDF con font unicode
+# Funzione per creare PDF con formattazione migliorata
 
 def crea_pdf_unicode(contenuto: str) -> bytes:
     pdf = PDF()
@@ -54,13 +58,33 @@ def crea_pdf_unicode(contenuto: str) -> bytes:
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     pdf.set_font("DejaVu", size=12)
+
     larghezza_pagina = pdf.w - 2 * pdf.l_margin
 
-    for linea in contenuto.split("\n"):
-        if linea.strip() == "":
-            pdf.ln(5)
+    righe = contenuto.split("\n")
+    for i, linea in enumerate(righe):
+        if i == 1:
+            pdf.set_font("DejaVu", style="B", size=11)
+            pdf.cell(0, 8, linea, ln=True)
+            pdf.ln(3)
+        elif i == 3 and "1)" in linea:
+            pdf.set_font("DejaVu", style="B", size=12)
+            pdf.set_text_color(0, 0, 128)
+            pdf.cell(0, 10, linea, ln=True)
+            pdf.set_text_color(0)
+        elif i == 4 and "2)" in linea:
+            pdf.set_font("DejaVu", style="B", size=12)
+            pdf.cell(0, 10, linea, ln=True)
+        elif linea.strip() == "":
+            pdf.ln(4)
         else:
-            pdf.multi_cell(larghezza_pagina, 10, linea)
+            pdf.set_font("DejaVu", size=11)
+            if "€" in linea:
+                descrizione, prezzo = linea.rsplit("€", 1)
+                pdf.cell(larghezza_pagina * 0.75, 8, descrizione.strip())
+                pdf.cell(larghezza_pagina * 0.25, 8, f"€ {prezzo.strip()}", align="R", ln=True)
+            else:
+                pdf.multi_cell(0, 8, linea)
 
     return bytes(pdf.output(dest='S'))
 
