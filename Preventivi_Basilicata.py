@@ -57,7 +57,7 @@ def carica_font():
 
 def crea_pdf_unicode(contenuto: str) -> bytes:
     pdf = PDF()
-    font_path = carica_font()
+    font_path = \"DejaVuSans.ttf\"
     pdf.add_page()
     pdf.add_font("DejaVu", "", font_path, uni=True)
     pdf.set_font("DejaVu", size=12)
