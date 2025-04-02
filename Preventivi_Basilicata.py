@@ -4,7 +4,10 @@ import re
 from datetime import datetime
 from fpdf import FPDF
 import base64
-import os
+
+# Carica il font localmente
+def carica_font():
+    return "DejaVuSans.ttf"
 
 # Caricamento del file Excel con caching
 @st.cache_data
@@ -12,7 +15,6 @@ def carica_tariffario(percorso="TariffarioRegioneBasilicata.xlsx"):
     return pd.read_excel(percorso)
 
 # Funzione per generare il preventivo
-
 def genera_preventivo_da_dettato(testo: str, df: pd.DataFrame) -> str:
     testo = testo.upper().replace("PAI", "")
     testo = testo.replace(".", "").replace(" ", "")
@@ -33,25 +35,22 @@ def genera_preventivo_da_dettato(testo: str, df: pd.DataFrame) -> str:
             righe_dettaglio.append(f"- codice non trovato: {c}")
 
     dettaglio = "\n".join(righe_dettaglio)
-
     data_oggi = datetime.today().strftime('%d/%m/%Y')
     intestazione = "Laboratorio di analisi cliniche MONTEMURRO - Matera"
     intestazione += f"\nPreventivo - data di generazione: {data_oggi}"
-
     contenuto = f"{intestazione}\n\n1) Preventivo: € {round(totale, 2)}\n2) Dettaglio:\n{dettaglio}"
     return contenuto
 
-# Funzione per creare PDF con fpdf2 e font Unicode
+# Classe PDF con font personalizzato
 class PDF(FPDF):
     def header(self):
         self.set_font("DejaVu", size=12)
 
-def carica_font():
-    return "DejaVuSans.ttf"
+# Funzione per creare PDF
 
 def crea_pdf_unicode(contenuto: str) -> bytes:
     pdf = PDF()
-    font_path = \"DejaVuSans.ttf\"
+    font_path = carica_font()
     pdf.add_page()
     pdf.add_font("DejaVu", "", font_path, uni=True)
     pdf.set_font("DejaVu", size=12)
@@ -68,16 +67,15 @@ st.markdown("Inserisci i codici regionali separati da virgola.\n"
             "Puoi usare anche punti o spazi tra i numeri.\n" 
             "Esempio: 3.0.0.12.31, 3.0.0.13.82")
 
-# Input manuale in Streamlit
+# Input manuale
 input_codici = st.text_input("Scrivi qui i codici regionali:")
 
-# Bottone di elaborazione
 if st.button("Genera Preventivo") or input_codici:
     try:
         risultato_testo = genera_preventivo_da_dettato(input_codici, carica_tariffario())
         st.text_area("Risultato del Preventivo:", risultato_testo, height=300, key="output_area")
 
-        # Pulsante di copia (versione migliorata con Streamlit native)
+        # Pulsante copia testo
         st.download_button(
             label="📋 Copia preventivo (testo)",
             data=risultato_testo,
@@ -85,7 +83,7 @@ if st.button("Genera Preventivo") or input_codici:
             mime="text/plain"
         )
 
-        # Genera PDF e link per download
+        # Pulsante esporta PDF
         pdf_bytes = crea_pdf_unicode(risultato_testo)
         b64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
         href = f'<a href="data:application/pdf;base64,{b64_pdf}" download="preventivo.pdf">⬇️ Esporta come PDF</a>'
@@ -94,7 +92,7 @@ if st.button("Genera Preventivo") or input_codici:
     except Exception as e:
         st.error(f"Errore durante la generazione del preventivo: {e}")
 
-# Caricamento opzionale di un file Excel aggiornato
+# Caricamento opzionale del file Excel
 st.write("\nSe vuoi aggiornare il tariffario, carica un nuovo file Excel:")
 file_excel = st.file_uploader("Carica nuovo tariffario", type=["xlsx"])
 if file_excel:
