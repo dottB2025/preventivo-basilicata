@@ -124,13 +124,3 @@ if st.button("Genera Preventivo") or input_codici:
 
     except Exception as e:
         st.error(f"Errore durante la generazione del preventivo: {e}")
-
-# Caricamento opzionale del file Excel
-st.write("\nSe vuoi aggiornare il tariffario, carica un nuovo file Excel:")
-file_excel = st.file_uploader("Carica nuovo tariffario", type=["xlsx"])
-if file_excel:
-    try:
-        df = pd.read_excel(file_excel)
-        st.success("Tariffario aggiornato correttamente! Rilancia il preventivo con i nuovi dati.")
-    except Exception as e:
-        st.error(f"Errore nel caricamento del file: {e}")
