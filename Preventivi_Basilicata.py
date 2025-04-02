@@ -55,6 +55,7 @@ def crea_pdf_unicode(contenuto: str) -> bytes:
     pdf = PDF()
     font_path = carica_font()
     pdf.add_font("DejaVu", "", font_path, uni=True)
+    pdf.add_font("DejaVu", "B", font_path, uni=True)
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     pdf.set_font("DejaVu", size=12)
