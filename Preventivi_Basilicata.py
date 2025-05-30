@@ -6,6 +6,9 @@ from fpdf import FPDF
 import base64
 import time
 
+# ✅ Deve essere il primo comando Streamlit
+st.set_page_config(page_title="Preventivo Sanitario Basilicata", layout="centered")
+
 # Mostra messaggio iniziale per attesa da risveglio
 with st.spinner("⏳ L'app si sta avviando, attendi qualche secondo se era in pausa..."):
     time.sleep(1.5)
@@ -102,8 +105,7 @@ def crea_pdf_unicode(contenuto: str) -> bytes:
 
     return pdf.output(dest='S').encode('latin1')
 
-# Layout Streamlit
-st.set_page_config(page_title="Preventivo Sanitario Basilicata", layout="centered")
+# Titolo
 st.title("Preventivo Sanitario - Basilicata")
 
 st.markdown("Inserisci i codici regionali separati da virgola o trattino.\n" 
