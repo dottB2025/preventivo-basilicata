@@ -4,6 +4,11 @@ import re
 from datetime import datetime
 from fpdf import FPDF
 import base64
+import time
+
+# Mostra messaggio iniziale per attesa da risveglio
+with st.spinner("⏳ L'app si sta avviando, attendi qualche secondo se era in pausa..."):
+    time.sleep(1.5)
 
 # Carica il font localmente
 def carica_font():
