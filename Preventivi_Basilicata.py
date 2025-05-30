@@ -103,7 +103,7 @@ def crea_pdf_unicode(contenuto: str) -> bytes:
             else:
                 pdf.multi_cell(0, 8, linea)
 
-    return pdf.output(dest='S').encode('latin1')
+    return pdf.output(dest='S')
 
 # Titolo
 st.title("Preventivo Sanitario - Basilicata")
